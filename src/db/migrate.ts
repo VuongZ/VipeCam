@@ -10,7 +10,11 @@ async function main() {
   }
 }
 main().catch((error: unknown) => {
-  const detail = (error instanceof Error ? error.message : String(error))
+  const messages: string[] = [];
+  for (let e: unknown = error; e && messages.length < 4; e = (e as Error).cause)
+    messages.push(e instanceof Error ? e.message : String(e));
+  const detail = messages
+    .join(" <- ")
     // Never print credentials embedded in a connection string.
     .replace(/postgres(ql)?:\/\/[^\s"']+/gi, "postgresql://***");
   console.error(
