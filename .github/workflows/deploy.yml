@@ -49,7 +49,14 @@ jobs:
       - name: Apply database migrations
         run: pnpm db:migrate
       - name: Build Worker
-        run: pnpm build:cloudflare
+        run: |
+          if ! pnpm build:cloudflare > /tmp/build.log 2>&1; then
+            cat /tmp/build.log
+            err=$(grep -E "ERROR|Error:|failed|Cannot" /tmp/build.log | tail -n 10 | tr '\n' ' ')
+            echo "::error::Build Worker failed: $err"
+            exit 1
+          fi
+          cat /tmp/build.log
       - name: Deploy Worker
         run: pnpm deploy:cloudflare
       - name: Upload runtime secrets
