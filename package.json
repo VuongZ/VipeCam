@@ -16,7 +16,7 @@
     "db:seed": "node --conditions=react-server --import tsx src/db/seed.ts",
     "db:check": "node --conditions=react-server --import tsx scripts/check-db.ts",
     "admin:create": "node --conditions=react-server --import tsx scripts/create-admin.ts",
-    "build:cloudflare": "opennextjs-cloudflare build",
+    "build:cloudflare": "node -e \"process.env.CLOUDFLARE_WORKER_BUILD='1';require('child_process').execSync('opennextjs-cloudflare build',{stdio:'inherit'})\"",
     "preview:cloudflare": "opennextjs-cloudflare preview",
     "deploy:cloudflare": "opennextjs-cloudflare deploy"
   },

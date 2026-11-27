@@ -48,7 +48,7 @@ export async function normalizeImage(bytes: Uint8Array) {
       output = new Uint8Array(await result.response().arrayBuffer());
     } else {
       output = await (
-        await import("./normalize-image-node")
+        await import("@/services/normalize-image-node")
       ).normalizeImageNode(bytes, format);
     }
     if (output.length > MAX_IMAGE_BYTES)
