@@ -14,7 +14,7 @@ main().catch((error: unknown) => {
     // Never print credentials embedded in a connection string.
     .replace(/postgres(ql)?:\/\/[^\s"']+/gi, "postgresql://***");
   console.error(
-    `Migration failed. Check database connection and migrations. ${detail}`,
+    `${process.env.GITHUB_ACTIONS ? "::error::" : ""}Migration failed. Check database connection and migrations. ${detail}`,
   );
   process.exitCode = 1;
 });
