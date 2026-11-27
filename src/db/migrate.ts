@@ -9,7 +9,12 @@ async function main() {
     await closeDatabase();
   }
 }
-main().catch(() => {
-  console.error("Migration failed. Check database connection and migrations.");
+main().catch((error: unknown) => {
+  const detail = (error instanceof Error ? error.message : String(error))
+    // Never print credentials embedded in a connection string.
+    .replace(/postgres(ql)?:\/\/[^\s"']+/gi, "postgresql://***");
+  console.error(
+    `Migration failed. Check database connection and migrations. ${detail}`,
+  );
   process.exitCode = 1;
 });
