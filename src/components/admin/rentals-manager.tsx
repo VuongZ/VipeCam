@@ -25,7 +25,7 @@ export function RentalsManager({ rentals }: { rentals: RentalRow[] }) {
   const rows = rentals.filter(
     (r) =>
       (!status || r.status === status) &&
-      `${r.rentalCode} ${r.customerName} ${r.email} ${r.items.map((i) => i.cameraName).join(" ")}`
+      `${r.rentalCode} ${r.customerName} ${r.email} ${r.phone || ""} ${r.items.map((i) => i.cameraName).join(" ")}`
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
@@ -131,6 +131,10 @@ export function RentalsManager({ rentals }: { rentals: RentalRow[] }) {
                 </span>
               </div>
               <dl className="spec-list">
+                <div>
+                  <dt>Số điện thoại Zalo</dt>
+                  <dd>{row.phone || "Chưa cập nhật"}</dd>
+                </div>
                 <div>
                   <dt>Ngày nhận</dt>
                   <dd>{dateLabel(row.startDate)}</dd>

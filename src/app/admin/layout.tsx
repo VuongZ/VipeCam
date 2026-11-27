@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Aperture, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
-import { getSettings } from "@/services/catalog";
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { AdminNavigation } from "@/components/admin/navigation";
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -14,14 +14,11 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   await requireAdmin();
-  const shop = await getSettings();
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <Link href="/admin" className="logo">
-          <Aperture size={27} />
-          {shop.shopName}
-          <b>.</b>
+          <BrandLogo preload />
         </Link>
         <AdminNavigation />
         <Link className="button button-outline mt-auto" href="/">
@@ -31,8 +28,7 @@ export default async function AdminLayout({
       </aside>
       <main id="main-content" className="admin-main">
         <Link className="mobile-admin-title logo" href="/">
-          {shop.shopName}
-          <b>.</b>
+          <BrandLogo />
         </Link>
         <AdminNavigation mobile />
         {children}

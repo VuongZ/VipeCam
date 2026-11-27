@@ -4,6 +4,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Field } from "@/lib/admin-resources";
+import { ProductImages } from "./product-images";
+import type { CameraImageInput } from "@/validators";
+import { uploadImage } from "@/lib/upload-image";
+import { IMAGE_ACCEPT, IMAGE_HELP } from "@/lib/image-formats";
 import {
   bannerSchema,
   cameraSchema,
@@ -11,6 +15,7 @@ import {
   feedbackSchema,
   imageSchema,
   priceSchema,
+  rentalPolicySchema,
   settingsSchema,
 } from "@/validators";
 export type AdminRecord = Record<string, unknown> & { id: string };
@@ -26,6 +31,7 @@ const schemas = {
   banners: bannerSchema,
   feedbacks: feedbackSchema,
   settings: settingsSchema,
+  "rental-policies": rentalPolicySchema,
 };
 export function Editor({
   fields,
@@ -55,33 +61,36 @@ export function Editor({
     ),
   );
   const [busy, setBusy] = useState(false);
+  const [images, setImages] = useState<CameraImageInput[]>(() => {
+    const existing = (record?.images || []) as CameraImageInput[];
+    const hasPrimary = existing.some((image) => image.isPrimary);
+    return existing.map((image, index) => ({
+      ...image,
+      isPrimary: hasPrimary ? image.isPrimary : index === 0,
+    }));
+  });
   const [uploading, setUploading] = useState(false);
+  const [recipeImages, setRecipeImages] = useState<CameraImageInput[]>(() =>
+    ((record?.recipeImages || []) as CameraImageInput[]).map((image, i) => ({
+      ...image,
+      isPrimary: i === 0,
+    })),
+  );
   const [error, setError] = useState("");
   const set = (key: string, value: unknown) =>
     setValues((v) => ({ ...v, [key]: value }));
   async function upload(file: File | undefined, key: string) {
     if (!file) return;
-    if (
-      file.size > 5 * 1024 * 1024 ||
-      !["image/jpeg", "image/png", "image/webp"].includes(file.type)
-    )
-      return toast.error("Chọn ảnh JPEG, PNG, WebP tối đa 5 MB.");
     setUploading(true);
     try {
-      const data = new FormData();
-      data.set("file", file);
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: data,
-      });
-      const result = await response.json();
-      if (!response.ok) toast.error(result.error);
-      else {
-        set(key, result.url);
-        toast.success("Đã tải ảnh. Lưu biểu mẫu để áp dụng.");
-      }
-    } catch {
-      toast.error("Không tải được ảnh. Vui lòng thử lại.");
+      set(key, await uploadImage(file));
+      toast.success("Đã tải ảnh. Lưu biểu mẫu để áp dụng.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không tải được ảnh. Vui lòng thử lại.",
+      );
     } finally {
       setUploading(false);
     }
@@ -93,7 +102,10 @@ export function Editor({
         e.preventDefault();
         if (busy || uploading) return;
         setError("");
-        const payload = { ...values };
+        const payload: Record<string, unknown> = {
+          ...values,
+          ...(resource === "cameras" ? { images, recipeImages } : {}),
+        };
         for (const field of fields)
           if (field.type === "json") {
             const entries = String(payload[field.key])
@@ -194,11 +206,11 @@ export function Editor({
               <input
                 aria-label={`Tải ${field.label.toLowerCase()}`}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept={IMAGE_ACCEPT}
                 disabled={uploading}
                 onChange={(e) => void upload(e.target.files?.[0], field.key)}
               />
-              <p className="helper-text mt-1">JPEG, PNG, WebP · Tối đa 5 MB</p>
+              <p className="helper-text mt-1">{IMAGE_HELP}</p>
               {Boolean(values[field.key]) && (
                 <SafeImage
                   src={String(values[field.key])}
@@ -210,6 +222,24 @@ export function Editor({
           )}
         </div>
       ))}
+      {resource === "cameras" && (
+        <>
+          <ProductImages
+            images={images}
+            onChange={setImages}
+            disabled={busy || uploading}
+            onUploading={setUploading}
+          />
+          <ProductImages
+            title="Công thức chỉnh màu của máy ảnh"
+            primarySelection={false}
+            images={recipeImages}
+            onChange={setRecipeImages}
+            disabled={busy || uploading}
+            onUploading={setUploading}
+          />
+        </>
+      )}
       {error && (
         <p className="error-text" role="alert">
           {error}

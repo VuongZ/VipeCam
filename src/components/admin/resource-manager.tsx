@@ -16,6 +16,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Editor, type AdminRecord, type Choices } from "./editor";
+import { SafeImage } from "@/components/ui/safe-image";
 export function ResourceManager({
   resource,
   rows,
@@ -48,6 +49,16 @@ export function ResourceManager({
   );
   function value(row: AdminRecord, col: (typeof config.columns)[number]) {
     const v = row[col.key];
+    if (col.type === "image")
+      return v ? (
+        <SafeImage
+          src={String(v)}
+          alt={String(row.title || col.label)}
+          className="admin-feedback-thumbnail"
+        />
+      ) : (
+        "—"
+      );
     if (col.type === "money") return money(Number(v));
     if (col.type === "boolean")
       return <span className="badge">{v ? "Có" : "Không"}</span>;

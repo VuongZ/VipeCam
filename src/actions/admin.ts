@@ -11,6 +11,7 @@ import {
   categories,
   feedbacks,
   rentalPrices,
+  rentalPolicies,
   settings,
 } from "@/db/schema";
 import {
@@ -20,10 +21,13 @@ import {
   feedbackSchema,
   imageSchema,
   priceSchema,
+  rentalPolicySchema,
   settingsSchema,
 } from "@/validators";
 import { changeRentalStatus, reservedQuantity } from "@/services/booking";
 import { todayInVietnam } from "@/services/booking-rules";
+import { ensurePrimaryImage, saveCameraImages } from "@/services/camera-images";
+import { saveCameraRecipes } from "@/services/camera-recipes";
 async function authorize() {
   const session = await getSession();
   if (session?.user.role !== "ADMIN")
@@ -49,8 +53,9 @@ export async function saveResource(
     if (id) z.uuid().parse(id);
     switch (resource) {
       case "cameras": {
-        const data = cameraSchema.parse(raw);
+        const { images, recipeImages, ...data } = cameraSchema.parse(raw);
         await db.transaction(async (tx) => {
+          let cameraId = id;
           if (id) {
             await tx
               .select()
@@ -73,7 +78,17 @@ export async function saveResource(
                 "Thiết bị có đơn đã xác nhận. Xử lý các đơn trước khi giảm tồn kho hoặc ngừng cho thuê.",
               );
             await tx.update(cameras).set(data).where(eq(cameras.id, id));
-          } else await tx.insert(cameras).values(data);
+          } else {
+            const [created] = await tx
+              .insert(cameras)
+              .values(data)
+              .returning({ id: cameras.id });
+            cameraId = created.id;
+          }
+          if (images !== undefined && cameraId)
+            await saveCameraImages(tx, cameraId, images);
+          if (recipeImages !== undefined && cameraId)
+            await saveCameraRecipes(tx, cameraId, recipeImages);
         });
         break;
       }
@@ -102,7 +117,7 @@ export async function saveResource(
               .select()
               .from(cameraImages)
               .where(eq(cameraImages.id, id));
-            if (old && old.cameraId !== data.cameraId)
+            if (!old || old.cameraId !== data.cameraId)
               throw new Error(
                 "Không chuyển ảnh sang thiết bị khác. Hãy thêm ảnh mới.",
               );
@@ -123,7 +138,18 @@ export async function saveResource(
               .set(data)
               .where(eq(cameraImages.id, id));
           else await tx.insert(cameraImages).values(data);
+          await ensurePrimaryImage(tx, data.cameraId);
         });
+        break;
+      }
+      case "rental-policies": {
+        const data = rentalPolicySchema.parse(raw);
+        if (id)
+          await db
+            .update(rentalPolicies)
+            .set(data)
+            .where(eq(rentalPolicies.id, id));
+        else await db.insert(rentalPolicies).values(data);
         break;
       }
       case "banners": {
@@ -163,7 +189,23 @@ export async function deleteResource(resource: string, id: string) {
         await db.delete(rentalPrices).where(eq(rentalPrices.id, id));
         break;
       case "images":
-        await db.delete(cameraImages).where(eq(cameraImages.id, id));
+        await db.transaction(async (tx) => {
+          const [image] = await tx
+            .select()
+            .from(cameraImages)
+            .where(eq(cameraImages.id, id));
+          if (!image) return;
+          await tx
+            .select({ id: cameras.id })
+            .from(cameras)
+            .where(eq(cameras.id, image.cameraId))
+            .for("update");
+          await tx.delete(cameraImages).where(eq(cameraImages.id, id));
+          await ensurePrimaryImage(tx, image.cameraId);
+        });
+        break;
+      case "rental-policies":
+        await db.delete(rentalPolicies).where(eq(rentalPolicies.id, id));
         break;
       case "banners":
         await db.delete(banners).where(eq(banners.id, id));

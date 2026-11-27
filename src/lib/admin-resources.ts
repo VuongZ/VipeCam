@@ -16,7 +16,7 @@ export type Resource = {
   columns: {
     key: string;
     label: string;
-    type?: "money" | "boolean" | "status" | "camera" | "category";
+    type?: "money" | "boolean" | "status" | "camera" | "category" | "image";
   }[];
 };
 const active: Field = {
@@ -39,8 +39,24 @@ const camera: Field = {
   required: true,
 };
 export const resources: Record<string, Resource> = {
+  "rental-policies": {
+    title: "Quy định thuê máy",
+    singular: "ảnh quy định",
+    fields: [
+      { key: "title", label: "Tiêu đề", required: true },
+      { key: "imageUrl", label: "Ảnh quy định", type: "image", required: true },
+      order,
+      active,
+    ],
+    columns: [
+      { key: "imageUrl", label: "Ảnh quy định", type: "image" },
+      { key: "title", label: "Tiêu đề" },
+      { key: "displayOrder", label: "Thứ tự" },
+      { key: "isActive", label: "Hiển thị", type: "boolean" },
+    ],
+  },
   cameras: {
-    title: "Máy ảnh & thiết bị",
+    title: "Máy ảnh",
     singular: "thiết bị",
     fields: [
       { key: "name", label: "Tên thiết bị", required: true },
@@ -70,7 +86,7 @@ export const resources: Record<string, Resource> = {
       { key: "deposit", label: "Tiền cọc (đ)", type: "number", default: 0 },
       {
         key: "quantity",
-        label: "Số lượng thiết bị",
+        label: "Số lượng máy ảnh",
         type: "number",
         default: 1,
       },
@@ -114,15 +130,7 @@ export const resources: Record<string, Resource> = {
         label: "Biểu tượng",
         type: "select",
         default: "Camera",
-        options: [
-          { value: "Camera", label: "Máy ảnh" },
-          { value: "Aperture", label: "Lens" },
-          { value: "Lightbulb", label: "Đèn" },
-          { value: "Focus", label: "Gimbal" },
-          { value: "Mic", label: "Microphone" },
-          { value: "Triangle", label: "Tripod" },
-          { value: "Package", label: "Phụ kiện" },
-        ],
+        options: [{ value: "Camera", label: "Máy ảnh" }],
       },
       order,
       active,
@@ -213,10 +221,34 @@ export const resources: Record<string, Resource> = {
     title: "Feedback",
     singular: "đánh giá",
     fields: [
-      { key: "customerName", label: "Tên khách hàng", required: true },
+      {
+        key: "imageUrl",
+        label: "Ảnh feedback",
+        type: "image",
+        hint: "Tải ảnh chụp màn hình. Không cần nhập nội dung chữ khi đã có ảnh.",
+      },
+      {
+        key: "platform",
+        label: "Nền tảng",
+        type: "select",
+        default: "OTHER",
+        required: true,
+        options: [
+          { value: "FACEBOOK", label: "Facebook" },
+          { value: "TIKTOK", label: "TikTok" },
+          { value: "OTHER", label: "Khác" },
+        ],
+      },
+      {
+        key: "socialUrl",
+        label: "Liên kết bài đăng",
+        hint: "Không bắt buộc. Dùng liên kết HTTPS.",
+      },
+      order,
+      { key: "customerName", label: "Tên khách hàng" },
       { key: "avatarUrl", label: "Ảnh đại diện", type: "image" },
       { key: "rating", label: "Số sao (1–5)", type: "number", default: 5 },
-      { key: "content", label: "Nội dung", type: "textarea", required: true },
+      { key: "content", label: "Nội dung", type: "textarea" },
       {
         key: "isVisible",
         label: "Hiển thị công khai",
@@ -231,6 +263,9 @@ export const resources: Record<string, Resource> = {
       },
     ],
     columns: [
+      { key: "imageUrl", label: "Ảnh feedback", type: "image" },
+      { key: "platform", label: "Nền tảng" },
+      { key: "displayOrder", label: "Thứ tự" },
       { key: "customerName", label: "Khách hàng" },
       { key: "rating", label: "Số sao" },
       { key: "content", label: "Nội dung" },
@@ -241,15 +276,21 @@ export const resources: Record<string, Resource> = {
 };
 export const settingsFields: Field[] = [
   { key: "shopName", label: "Tên cửa hàng", required: true },
-  { key: "logoUrl", label: "Logo", type: "image" },
   { key: "phone", label: "Số điện thoại" },
   { key: "zalo", label: "Liên kết Zalo" },
-  { key: "facebook", label: "Liên kết Facebook" },
+  {
+    key: "facebookUrl",
+    label: "Liên kết Facebook",
+    hint: "Dùng URL HTTPS đầy đủ. Để trống để ẩn Facebook.",
+  },
+  {
+    key: "tiktokUrl",
+    label: "Liên kết TikTok",
+    hint: "Dùng URL HTTPS đầy đủ. Để trống để ẩn TikTok.",
+  },
   { key: "email", label: "Email" },
   { key: "address", label: "Địa chỉ", type: "textarea" },
   { key: "defaultDepositText", label: "Hướng dẫn tiền cọc", type: "textarea" },
-  { key: "rentalPolicy", label: "Chính sách thuê", type: "textarea" },
-  { key: "terms", label: "Điều khoản", type: "textarea" },
   { key: "about", label: "Giới thiệu", type: "textarea" },
   { key: "footerText", label: "Nội dung chân trang", type: "textarea" },
 ];

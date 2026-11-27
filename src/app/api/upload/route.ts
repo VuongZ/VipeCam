@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { imageType, storeImage } from "@/services/storage";
+import { storeImage } from "@/services/storage";
+import { normalizeImage, InvalidImageError } from "@/services/normalize-image";
+import { MAX_IMAGE_BYTES } from "@/lib/image-formats";
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (session?.user.role !== "ADMIN")
@@ -16,25 +18,48 @@ export async function POST(request: NextRequest) {
       { error: "Nguồn yêu cầu không hợp lệ." },
       { status: 403 },
     );
-  const max = 5 * 1024 * 1024;
+  const max = MAX_IMAGE_BYTES;
   const length = Number(request.headers.get("content-length"));
   if (!Number.isFinite(length) || length <= 0 || length > max + 65536)
-    return NextResponse.json({ error: "Ảnh tối đa 5 MB." }, { status: 413 });
+    return NextResponse.json({ error: "Ảnh tối đa 10 MB." }, { status: 413 });
   try {
-    const form = await request.formData();
+    // Bound actual bytes too; Content-Length alone can be forged by a client.
+    const reader = request.body?.getReader();
+    if (!reader) throw new InvalidImageError("Không có file ảnh.");
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > max + 65536) {
+        await reader.cancel();
+        return NextResponse.json(
+          { error: "Ảnh tối đa 10 MB." },
+          { status: 413 },
+        );
+      }
+      chunks.push(value);
+    }
+    const body = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      body.set(chunk, offset);
+      offset += chunk.length;
+    }
+    const form = await new Response(body, {
+      headers: { "content-type": request.headers.get("content-type") || "" },
+    }).formData();
     const file = form.get("file");
     if (!(file instanceof File) || !file.size || file.size > max)
-      return NextResponse.json({ error: "Ảnh tối đa 5 MB." }, { status: 400 });
+      return NextResponse.json({ error: "Ảnh tối đa 10 MB." }, { status: 400 });
     const buffer = new Uint8Array(await file.arrayBuffer());
-    const type = imageType(buffer);
-    if (!type || file.type !== type.mime)
-      return NextResponse.json(
-        { error: "Chỉ nhận ảnh JPEG, PNG hoặc WebP hợp lệ." },
-        { status: 400 },
-      );
-    const url = await storeImage(buffer, type.mime, type.extension);
+    const converted = await normalizeImage(buffer);
+    const url = await storeImage(converted, "image/webp", "webp");
     return NextResponse.json({ url });
-  } catch {
+  } catch (error) {
+    if (error instanceof InvalidImageError)
+      return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json(
       { error: "Không tải được ảnh. Kiểm tra cấu hình kho ảnh và thử lại." },
       { status: 500 },

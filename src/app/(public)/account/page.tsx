@@ -20,7 +20,7 @@ export default async function Account() {
           Vào trang quản trị
         </Link>
       )}
-      <AccountForm name={user.name} email={user.email} />
+      <AccountForm name={user.name} email={user.email} phone={user.phone} />
     </div>
   );
 }

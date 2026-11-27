@@ -34,6 +34,32 @@ export const categorySchema = z.object({
   displayOrder: z.coerce.number().int().min(0),
   isActive: z.boolean(),
 });
+export const cameraImageInputSchema = z.object({
+  id: z.uuid().optional(),
+  imageUrl: safeUrl.refine(Boolean, "Vui lòng tải ảnh lên."),
+  displayOrder: z.coerce.number().int().min(0).max(1000000),
+  isPrimary: z.boolean(),
+});
+export const cameraImagesSchema = z
+  .array(cameraImageInputSchema)
+  .max(50, "Mỗi thiết bị tối đa 50 ảnh.")
+  .refine(
+    (images) =>
+      !images.length || images.filter((image) => image.isPrimary).length === 1,
+    "Chọn đúng một ảnh đại diện.",
+  )
+  .refine((images) => {
+    const ids = images.flatMap((image) => (image.id ? [image.id] : []));
+    return new Set(ids).size === ids.length;
+  }, "Danh sách ảnh bị trùng.");
+export type CameraImageInput = z.infer<typeof cameraImageInputSchema>;
+export const cameraRecipesSchema = z
+  .array(cameraImageInputSchema.omit({ isPrimary: true }))
+  .max(50, "Mỗi máy tối đa 50 ảnh công thức.")
+  .refine((images) => {
+    const ids = images.flatMap((i) => (i.id ? [i.id] : []));
+    return new Set(ids).size === ids.length;
+  }, "Ảnh công thức bị trùng.");
 export const cameraSchema = z.object({
   name: line,
   slug,
@@ -48,6 +74,8 @@ export const cameraSchema = z.object({
   categoryId: z.uuid(),
   isFeatured: z.boolean(),
   isActive: z.boolean(),
+  images: cameraImagesSchema.optional(),
+  recipeImages: cameraRecipesSchema.optional(),
 });
 export const priceSchema = z.object({
   cameraId: z.uuid(),
@@ -72,25 +100,46 @@ export const bannerSchema = z.object({
   displayOrder: z.coerce.number().int().min(0),
   isActive: z.boolean(),
 });
-export const feedbackSchema = z.object({
-  customerName: line,
-  avatarUrl: safeUrl.nullable(),
-  rating: z.coerce.number().int().min(1).max(5),
-  content: body.min(1).max(2000),
-  isVisible: z.boolean(),
-  isFeatured: z.boolean(),
-});
+export const feedbackSchema = z
+  .object({
+    customerName: z.string().trim().max(250).default(""),
+    avatarUrl: safeUrl.nullable().default(null),
+    rating: z.coerce.number().int().min(1).max(5).default(5),
+    content: body.max(2000).default(""),
+    imageUrl: safeUrl.default(""),
+    platform: z.enum(["FACEBOOK", "TIKTOK", "OTHER"]).default("OTHER"),
+    socialUrl: safeUrl
+      .refine(
+        (value) => !value || value.startsWith("https://"),
+        "Liên kết mạng xã hội phải dùng HTTPS.",
+      )
+      .default(""),
+    displayOrder: z.coerce.number().int().min(0).max(1000000).default(0),
+    isVisible: z.boolean(),
+    isFeatured: z.boolean(),
+  })
+  .refine((value) => Boolean(value.imageUrl || value.content), {
+    path: ["imageUrl"],
+    message: "Vui lòng tải ảnh feedback hoặc nhập nội dung.",
+  });
+export const socialUrl = z
+  .string()
+  .trim()
+  .pipe(safeUrl)
+  .refine(
+    (value) => !value || value.startsWith("https://"),
+    "Liên kết mạng xã hội phải là URL HTTPS đầy đủ.",
+  );
 export const settingsSchema = z.object({
   shopName: line,
-  logoUrl: safeUrl,
+  logoUrl: z.literal("/images/logo.png").default("/images/logo.png"),
   phone: z.string().max(30),
   zalo: safeUrl,
-  facebook: safeUrl,
+  facebookUrl: socialUrl,
+  tiktokUrl: socialUrl,
   email: z.union([z.email(), z.literal("")]),
   address: body.max(500),
   defaultDepositText: body,
-  rentalPolicy: body,
-  terms: body,
   about: body,
   footerText: body.max(500),
 });
@@ -111,4 +160,32 @@ export const signInSchema = z.object({
   email: z.email("Email không hợp lệ."),
   password: z.string().min(10, "Mật khẩu cần ít nhất 10 ký tự.").max(128),
 });
-export const signUpSchema = signInSchema.extend({ name: line });
+export const zaloPhoneSchema = z
+  .string()
+  .trim()
+  .transform((v) =>
+    v
+      .replace(/[\s().-]/g, "")
+      .replace(/^\+84/, "0")
+      .replace(/^84(?=[35789]\d{8}$)/, "0"),
+  )
+  .pipe(
+    z
+      .string()
+      .regex(
+        /^0[35789]\d{8}$/,
+        "Nhập số di động Việt Nam hợp lệ (10 chữ số hoặc +84).",
+      ),
+  );
+export const signUpSchema = signInSchema.extend({
+  name: line,
+  phone: zaloPhoneSchema,
+});
+export const profileSchema = z.object({ name: line, phone: zaloPhoneSchema });
+
+export const rentalPolicySchema = z.object({
+  title: line,
+  imageUrl: safeUrl.refine(Boolean, "Vui lòng tải ảnh quy định."),
+  displayOrder: z.coerce.number().int().min(0).max(1000000),
+  isActive: z.boolean(),
+});

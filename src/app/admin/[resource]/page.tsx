@@ -4,9 +4,11 @@ import {
   banners,
   cameras,
   cameraImages,
+  cameraRecipes,
   categories,
   feedbacks,
   rentalPrices,
+  rentalPolicies,
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { ResourceManager } from "@/components/admin/resource-manager";
@@ -35,11 +37,34 @@ export default async function ResourcePage({
   };
   let rows: AdminRecord[];
   switch (resource) {
-    case "cameras":
+    case "cameras": {
       rows = await db.select().from(cameras).orderBy(cameras.name);
+      const images = await db
+        .select()
+        .from(cameraImages)
+        .orderBy(cameraImages.displayOrder, cameraImages.id);
+      const groups = new Map<string, typeof images>();
+      for (const image of images) {
+        const group = groups.get(image.cameraId) || [];
+        group.push(image);
+        groups.set(image.cameraId, group);
+      }
+      rows = rows.map((camera) => ({
+        ...camera,
+        images: groups.get(camera.id) || [],
+      }));
+      const recipes = await db
+        .select()
+        .from(cameraRecipes)
+        .orderBy(cameraRecipes.displayOrder, cameraRecipes.id);
+      rows = rows.map((camera) => ({
+        ...camera,
+        recipeImages: recipes.filter((r) => r.cameraId === camera.id),
+      }));
       break;
+    }
     case "categories":
-      rows = await db
+      rows = await db 
         .select()
         .from(categories)
         .orderBy(categories.displayOrder);
@@ -56,11 +81,20 @@ export default async function ResourcePage({
         .from(cameraImages)
         .orderBy(cameraImages.displayOrder);
       break;
+    case "rental-policies":
+      rows = await db
+        .select()
+        .from(rentalPolicies)
+        .orderBy(rentalPolicies.displayOrder, rentalPolicies.id);
+      break;
     case "banners":
       rows = await db.select().from(banners).orderBy(banners.displayOrder);
       break;
     case "feedbacks":
-      rows = await db.select().from(feedbacks).orderBy(feedbacks.createdAt);
+      rows = await db
+        .select()
+        .from(feedbacks)
+        .orderBy(feedbacks.displayOrder, feedbacks.createdAt);
       break;
     default:
       notFound();

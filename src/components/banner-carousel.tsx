@@ -1,5 +1,6 @@
 "use client";
 import { SafeImage } from "@/components/ui/safe-image";
+import { useImageSwipe } from "@/components/ui/use-image-swipe";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
@@ -10,12 +11,29 @@ export function BannerCarousel({
   banners: (typeof banners.$inferSelect)[];
 }) {
   const [index, setIndex] = useState(0);
+  function move(offset: number) {
+    if (rows.length > 1)
+      setIndex(
+        (current) =>
+          (Math.min(current, rows.length - 1) + offset + rows.length) %
+          rows.length,
+      );
+  }
+  const swipe = useImageSwipe(move);
   if (!rows.length) return null;
   const active = Math.min(index, rows.length - 1);
   const banner = rows[active];
   return (
     <section
+      {...swipe}
       className="hero"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          move(event.key === "ArrowLeft" ? -1 : 1);
+        }
+      }}
       aria-roledescription="băng chuyền"
       aria-label="Nổi bật"
     >
@@ -24,6 +42,7 @@ export function BannerCarousel({
         src={banner.imageUrl}
         alt=""
         fetchPriority="high"
+        draggable={false}
       />
       <div className="hero-shade" />
       <div className="hero-content">
@@ -52,16 +71,10 @@ export function BannerCarousel({
             ))}
           </div>
           <div className="flex gap-2">
-            <button
-              aria-label="Banner trước"
-              onClick={() => setIndex((index - 1 + rows.length) % rows.length)}
-            >
+            <button aria-label="Banner trước" onClick={() => move(-1)}>
               <ChevronLeft size={19} />
             </button>
-            <button
-              aria-label="Banner tiếp theo"
-              onClick={() => setIndex((index + 1) % rows.length)}
-            >
+            <button aria-label="Banner tiếp theo" onClick={() => move(1)}>
               <ChevronRight size={19} />
             </button>
           </div>

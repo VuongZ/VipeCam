@@ -1,6 +1,7 @@
-import { SafeImage } from "@/components/ui/safe-image";
+import { BrandLogo } from "./brand-logo";
+import { SocialLinks } from "./social-links";
 import Link from "next/link";
-import { Aperture, Search, UserRound, ArrowUpRight } from "lucide-react";
+import { Search, UserRound, ArrowUpRight } from "lucide-react";
 import { Navigation } from "./navigation";
 import { getSettings } from "@/services/catalog";
 export async function PublicShell({ children }: { children: React.ReactNode }) {
@@ -10,18 +11,15 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
       <header className="site-header">
         <div className="container header-inner">
           <Link href="/" className="logo">
-            {shop.logoUrl ? (
-              <SafeImage src={shop.logoUrl} width={32} height={32} alt="" />
-            ) : (
-              <Aperture size={29} />
-            )}
-            <span>
-              {shop.shopName}
-              <b>.</b>
-            </span>
+            <BrandLogo preload />
           </Link>
           <Navigation />
           <div className="header-actions">
+            <SocialLinks
+              facebookUrl={shop.facebookUrl}
+              tiktokUrl={shop.tiktokUrl}
+              compact
+            />
             <Link
               href="/cameras"
               aria-label="Tìm thiết bị"
@@ -43,17 +41,20 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
         <div className="container footer-grid">
           <div>
             <Link href="/" className="logo">
-              <Aperture size={27} />
-              {shop.shopName}
-              <b>.</b>
+              <BrandLogo />
             </Link>
             <p>{shop.footerText}</p>
+            <SocialLinks
+              facebookUrl={shop.facebookUrl}
+              tiktokUrl={shop.tiktokUrl}
+            />
           </div>
           <div>
             <strong>Khám phá</strong>
             <Link href="/cameras">Thiết bị cho thuê</Link>
-            <Link href="/policies">Chính sách thuê & điều khoản</Link>
+            <Link href="/quy-dinh-thue">Quy định thuê máy</Link>
             <Link href="/about">Về cửa hàng</Link>
+            <Link href="/contact">Liên hệ VipeCam</Link>
           </div>
           <div>
             <strong>Liên hệ</strong>
@@ -61,7 +62,6 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
             {shop.email && <a href={`mailto:${shop.email}`}>{shop.email}</a>}
             {shop.address && <p>{shop.address}</p>}
             {shop.zalo && <a href={shop.zalo}>Zalo</a>}
-            {shop.facebook && <a href={shop.facebook}>Facebook</a>}
             {!shop.phone && !shop.email && (
               <p>Thông tin liên hệ đang được cập nhật.</p>
             )}

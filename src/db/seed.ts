@@ -17,28 +17,17 @@ async function main() {
       .values({
         id: "shop",
         shopName: "VipeCam",
+        logoUrl: "/images/logo.png",
         about:
           "Thiết bị tốt. Khoảnh khắc của bạn. Chọn máy ảnh phù hợp cho chuyến đi, buổi chụp và những câu chuyện sắp kể.",
         phone: "",
         address: "",
         defaultDepositText:
           "Tiền cọc được hoàn lại khi trả thiết bị đủ phụ kiện và đúng tình trạng bàn giao.",
-        rentalPolicy:
-          "Ngày nhận và ngày trả đều được tính vào thời gian thuê. Đơn chỉ giữ thiết bị sau khi cửa hàng xác nhận. Mang giấy tờ tùy thân khi nhận máy và kiểm tra đầy đủ phụ kiện cùng nhân viên. Liên hệ cửa hàng trước ngày trả nếu cần gia hạn.",
-        terms:
-          "Giá thuê chưa bao gồm các dịch vụ phát sinh ngoài đơn. Tiền cọc được ghi riêng và hoàn sau khi kiểm tra thiết bị. Không tự ý tháo máy hoặc chuyển thiết bị cho bên thứ ba. Chính sách bồi thường sẽ được thống nhất trong biên bản bàn giao.",
         footerText: "Giữ trọn từng khoảnh khắc.",
       })
       .onConflictDoNothing();
-    const cats = [
-      ["Máy ảnh", "may-anh", "Camera"],
-      ["Lens", "lens", "Aperture"],
-      ["Đèn", "den", "Lightbulb"],
-      ["Gimbal", "gimbal", "Focus"],
-      ["Microphone", "microphone", "Mic"],
-      ["Tripod", "tripod", "Triangle"],
-      ["Phụ kiện", "phu-kien", "Package"],
-    ];
+    const cats = [["Máy ảnh", "may-anh", "Camera"]];
     for (const [i, c] of cats.entries())
       await tx
         .insert(categories)

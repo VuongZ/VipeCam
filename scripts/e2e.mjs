@@ -49,6 +49,9 @@ try {
     .getByLabel("Họ và tên", { exact: true })
     .fill(`${prefix} Customer`);
   await page.getByLabel("Email", { exact: true }).fill(customerEmail);
+  await page
+    .getByLabel("Số điện thoại sử dụng Zalo", { exact: true })
+    .fill("0901234567");
   await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Đăng ký", exact: true }).click();
   await expect(page).toHaveURL(/\/account$/, { timeout: 20000 });

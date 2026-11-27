@@ -4,12 +4,15 @@ import { getCatalog, getSettings } from "@/services/catalog";
 import { Gallery } from "@/components/camera/gallery";
 import { BookingForm } from "@/components/rental/booking-form";
 import { statusLabels } from "@/lib/utils";
+import { RentalPolicyGallery } from "@/components/rental-policy-gallery";
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const [camera] = await getCatalog(slug);
   if (!camera) return {};
-  const image = camera.images[0]?.imageUrl;
+  const image = (
+    camera.images.find((image) => image.isPrimary) || camera.images[0]
+  )?.imageUrl;
   const images = image
     ? [
         new URL(
@@ -63,7 +66,28 @@ export default async function Detail({ params }: Props) {
               </div>
             ))}
           </dl>
-          <Link href="/policies" className="text-primary text-sm">
+          {camera.recipeImages.length > 0 && (
+            <section
+              className="camera-recipe-section"
+              aria-labelledby="camera-recipe-title"
+            >
+              <h2 id="camera-recipe-title" className="text-xl mb-3">
+                Công thức chỉnh màu cho {camera.name}
+              </h2>
+              <p className="text-sm text-muted mb-4">
+                Tham khảo thiết lập riêng cho máy ảnh này. Chạm vào ảnh để phóng
+                to và xem toàn bộ công thức.
+              </p>
+              <RentalPolicyGallery
+                imageLabel="công thức"
+                rows={camera.recipeImages.map((image, index) => ({
+                  ...image,
+                  title: `${camera.name} — Công thức chỉnh màu ${index + 1}`,
+                }))}
+              />
+            </section>
+          )}
+          <Link href="/quy-dinh-thue" className="text-primary text-sm">
             Xem chính sách thuê & điều khoản →
           </Link>
         </div>

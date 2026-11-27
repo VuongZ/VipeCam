@@ -1,24 +1,14 @@
-import { SafeImage } from "@/components/ui/safe-image";
+import { FeedbackGallery } from "@/components/feedback-gallery";
 import Link from "next/link";
 import {
   ArrowRight,
-  Camera,
-  Aperture,
-  Lightbulb,
-  Focus,
-  Mic,
-  Triangle,
-  Package,
-  Search,
   ShieldCheck,
   CalendarDays,
   Headphones,
-  Star,
 } from "lucide-react";
 import {
   getBanners,
   getCatalog,
-  getCategories,
   getFeedbacks,
   getSettings,
 } from "@/services/catalog";
@@ -28,20 +18,10 @@ export async function generateMetadata() {
   const shop = await getSettings();
   return { title: shop.shopName, description: shop.about.slice(0, 160) };
 }
-const icons: Record<string, typeof Camera> = {
-  Camera,
-  Aperture,
-  Lightbulb,
-  Focus,
-  Mic,
-  Triangle,
-  Package,
-};
 export default async function Home() {
-  const [banners, cameras, categories, feedbacks] = await Promise.all([
+  const [banners, cameras, feedbacks] = await Promise.all([
     getBanners(),
     getCatalog(),
-    getCategories(),
     getFeedbacks(),
   ]);
   return (
@@ -59,36 +39,6 @@ export default async function Home() {
           <Headphones /> Hướng dẫn khi nhận máy
         </span>
       </div>
-      <section className="home-discovery">
-        <div>
-          <span className="eyebrow">BẮT ĐẦU TẠI ĐÂY</span>
-          <h2>Bạn muốn sáng tạo điều gì?</h2>
-        </div>
-        <form action="/cameras" className="search-box">
-          <Search size={20} />
-          <input
-            name="q"
-            aria-label="Tìm thiết bị"
-            placeholder="Tìm máy ảnh, lens, phụ kiện..."
-          />
-          <button type="submit" aria-label="Tìm kiếm">
-            <ArrowRight size={19} />
-          </button>
-        </form>
-      </section>
-      <div className="category-grid">
-        {categories.map((c) => {
-          const Icon = icons[c.icon] || Camera;
-          return (
-            <Link key={c.id} href={`/cameras?category=${c.id}`}>
-              <span>
-                <Icon size={25} strokeWidth={1.5} />
-              </span>
-              <strong>{c.name}</strong>
-            </Link>
-          );
-        })}
-      </div>
       <section className="section-space">
         <div className="section-heading">
           <div>
@@ -105,7 +55,7 @@ export default async function Home() {
               .filter((c) => c.isFeatured)
               .slice(0, 8)
               .map((c) => (
-                <CameraCard key={c.id} camera={c} />
+                <CameraCard key={c.id} camera={c} imageCarousel={false} />
               ))}
           </div>
         ) : (
@@ -123,40 +73,7 @@ export default async function Home() {
           </div>
           <span className="text-muted">Những trải nghiệm được chia sẻ</span>
         </div>
-        {feedbacks.length ? (
-          <div className="feedback-carousel">
-            {feedbacks.map((f) => (
-              <article className="feedback-card" key={f.id}>
-                <div className="stars" aria-label={`${f.rating} trên 5 sao`}>
-                  {Array.from({ length: f.rating }, (_, i) => (
-                    <Star key={i} size={15} fill="currentColor" />
-                  ))}
-                </div>
-                <blockquote>“{f.content}”</blockquote>
-                <div className="feedback-person">
-                  {f.avatarUrl ? (
-                    <SafeImage
-                      src={f.avatarUrl}
-                      alt=""
-                      width={40}
-                      height={40}
-                    />
-                  ) : (
-                    <span>{f.customerName.slice(0, 1)}</span>
-                  )}
-                  <div>
-                    <strong>{f.customerName}</strong>
-                    <small>
-                      {new Intl.DateTimeFormat("vi-VN").format(f.createdAt)}
-                    </small>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">Chưa có đánh giá nào.</div>
-        )}
+        <FeedbackGallery rows={feedbacks} />
       </section>
     </div>
   );

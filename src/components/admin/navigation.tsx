@@ -13,6 +13,11 @@ import {
   Settings,
 } from "lucide-react";
 const links = [
+  {
+    href: "/admin/rental-policies",
+    label: "Quy định thuê máy",
+    icon: ClipboardList,
+  },
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/cameras", label: "Máy ảnh", icon: Camera },
   { href: "/admin/categories", label: "Danh mục", icon: Grid2X2 },

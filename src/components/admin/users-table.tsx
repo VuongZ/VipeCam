@@ -7,19 +7,22 @@ export function UsersTable({
     id: string;
     name: string;
     email: string;
+    phone: string | null;
     role: string;
     createdAt: Date;
   }[];
 }) {
   const [q, setQ] = useState("");
   const filtered = users.filter((u) =>
-    `${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()),
+    `${u.name} ${u.email} ${u.phone || ""}`
+      .toLowerCase()
+      .includes(q.toLowerCase()),
   );
   return (
     <>
       <div className="admin-toolbar">
         <input
-          placeholder="Tìm tên hoặc email..."
+          placeholder="Tìm tên, email hoặc số Zalo..."
           aria-label="Tìm người dùng"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -32,6 +35,7 @@ export function UsersTable({
               <tr>
                 <th>Họ tên</th>
                 <th>Email</th>
+                <th>Số Zalo</th>
                 <th>Vai trò</th>
                 <th>Ngày tạo</th>
               </tr>
@@ -41,6 +45,7 @@ export function UsersTable({
                 <tr key={u.id}>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
+                  <td>{u.phone || "Chưa cập nhật"}</td>
                   <td>
                     <span className="badge">
                       {u.role === "ADMIN" ? "Quản trị viên" : "Khách hàng"}

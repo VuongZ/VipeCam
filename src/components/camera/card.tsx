@@ -1,34 +1,28 @@
-import { SafeImage } from "@/components/ui/safe-image";
+import { CardImages } from "./card-images";
 import Link from "next/link";
-import { ArrowUpRight, Camera } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { money, statusLabels } from "@/lib/utils";
 import type { CatalogCamera } from "@/services/catalog";
-export function CameraCard({ camera }: { camera: CatalogCamera }) {
+export function CameraCard({
+  camera,
+  imageCarousel = true,
+}: {
+  camera: CatalogCamera;
+  imageCarousel?: boolean;
+}) {
+  const primary =
+    camera.images.find((image) => image.isPrimary) || camera.images[0];
   const lowest = camera.prices.length
     ? Math.min(...camera.prices.map((p) => p.price))
     : null;
   return (
     <article className="camera-card">
-      <Link
+      <CardImages
+        images={imageCarousel ? camera.images : primary ? [primary] : []}
+        name={camera.name}
         href={`/cameras/${camera.slug}`}
-        className="camera-photo"
-        aria-label={`Xem ${camera.name}`}
-      >
-        {camera.images[0] ? (
-          <SafeImage
-            src={camera.images[0].imageUrl}
-            alt={camera.name}
-            loading="lazy"
-            width={640}
-            height={480}
-          />
-        ) : (
-          <Camera size={64} />
-        )}
-        {camera.isFeatured && (
-          <span className="feature-badge">Được yêu thích</span>
-        )}
-      </Link>
+        featured={camera.isFeatured}
+      />
       <div className="camera-info">
         <div className="eyebrow">
           {camera.brand} <span> / {camera.category}</span>

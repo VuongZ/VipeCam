@@ -22,6 +22,34 @@
       "when": 1789269340944,
       "tag": "0002_harsh_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789287469138,
+      "tag": "0003_oval_dracula",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789305957282,
+      "tag": "0004_many_jack_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789350717319,
+      "tag": "0005_sudden_the_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794673201439,
+      "tag": "0006_camera_recipes",
+      "breakpoints": true
     }
   ]
 }

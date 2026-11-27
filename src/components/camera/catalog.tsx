@@ -128,7 +128,7 @@ function CatalogInner({ cameras, categories }: Props) {
           <Search size={20} />
           <input
             aria-label="Tìm thiết bị"
-            placeholder="Tìm máy ảnh, lens, phụ kiện..."
+            placeholder="Tìm tên máy ảnh, thương hiệu..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />

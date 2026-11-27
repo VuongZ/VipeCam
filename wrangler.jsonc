@@ -5,5 +5,12 @@
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // Cloudflare Images: validates/converts uploads to WebP inside the Worker.
+  "images": { "binding": "IMAGES" },
+  // Non-secret runtime values. Secrets (DATABASE_URL, BETTER_AUTH_SECRET, R2_*,
+  // app URLs) are uploaded by .github/workflows/deploy.yml via `wrangler secret bulk`.
+  "vars": { "STORAGE_DRIVER": "r2" },
+  // Serve on https://vipecam.huyvuongkl.workers.dev (currently disabled in the dashboard).
+  "workers_dev": true,
   "observability": { "enabled": true }
 }

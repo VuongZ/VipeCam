@@ -249,7 +249,12 @@ export async function changeRentalStatus(
 }
 export async function getRentals(userId?: string, limit?: number) {
   const query = db
-    .select({ rental: rentals, customerName: user.name, email: user.email })
+    .select({
+      rental: rentals,
+      customerName: user.name,
+      email: user.email,
+      phone: user.phone,
+    })
     .from(rentals)
     .innerJoin(user, eq(user.id, rentals.userId))
     .where(userId ? eq(rentals.userId, userId) : undefined)
@@ -275,6 +280,7 @@ export async function getRentals(userId?: string, limit?: number) {
     ...row.rental,
     customerName: row.customerName,
     email: row.email,
+    phone: row.phone,
     items: byRental.get(row.rental.id) || [],
   }));
 }

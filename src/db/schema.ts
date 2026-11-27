@@ -146,6 +146,7 @@ export const cameraImages = pgTable(
     imageUrl: text("image_url").notNull(),
     displayOrder: integer("display_order").default(0).notNull(),
     isPrimary: boolean("is_primary").default(false).notNull(),
+    ...times(),
   },
   (t) => [
     uniqueIndex("one_primary_image")
@@ -172,6 +173,19 @@ export const rentalPrices = pgTable(
     check("price_positive", sql`${t.price} > 0 AND ${t.durationDays} > 0`),
     index("rental_price_camera_idx").on(t.cameraId, t.isActive, t.displayOrder),
   ],
+);
+export const cameraRecipes = pgTable(
+  "camera_recipes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    cameraId: uuid("camera_id")
+      .notNull()
+      .references(() => cameras.id, { onDelete: "cascade" }),
+    imageUrl: text("image_url").notNull(),
+    displayOrder: integer("display_order").default(0).notNull(),
+    ...times(),
+  },
+  (t) => [index("camera_recipe_order_idx").on(t.cameraId, t.displayOrder)],
 );
 export const rentals = pgTable(
   "rentals",
@@ -230,19 +244,36 @@ export const rentalItems = pgTable(
     ),
   ],
 );
+export const feedbackPlatform = pgEnum("feedback_platform", [
+  "FACEBOOK",
+  "TIKTOK",
+  "OTHER",
+]);
 export const feedbacks = pgTable(
   "feedbacks",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    customerName: text("customer_name").notNull(),
+    customerName: text("customer_name").default("").notNull(),
     avatarUrl: text("avatar_url"),
-    rating: integer("rating").notNull(),
-    content: text("content").notNull(),
+    rating: integer("rating").default(5).notNull(),
+    content: text("content").default("").notNull(),
+    imageUrl: text("image_url").default("").notNull(),
+    platform: feedbackPlatform("platform").default("OTHER").notNull(),
+    socialUrl: text("social_url").default("").notNull(),
+    displayOrder: integer("display_order").default(0).notNull(),
     isVisible: boolean("is_visible").default(true).notNull(),
     isFeatured: boolean("is_featured").default(false).notNull(),
     ...times(),
   },
-  (t) => [check("rating_range", sql`${t.rating} BETWEEN 1 AND 5`)],
+  (t) => [
+    check("rating_range", sql`${t.rating} BETWEEN 1 AND 5`),
+    index("feedback_display_idx").on(
+      t.isVisible,
+      t.isFeatured,
+      t.displayOrder,
+      t.createdAt,
+    ),
+  ],
 );
 export const banners = pgTable("banners", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -262,6 +293,8 @@ export const settings = pgTable("settings", {
   phone: text("phone").default("").notNull(),
   zalo: text("zalo").default("").notNull(),
   facebook: text("facebook").default("").notNull(),
+  facebookUrl: text("facebook_url").default("").notNull(),
+  tiktokUrl: text("tiktok_url").default("").notNull(),
   email: text("email").default("").notNull(),
   address: text("address").default("").notNull(),
   defaultDepositText: text("default_deposit_text").default("").notNull(),
@@ -271,3 +304,19 @@ export const settings = pgTable("settings", {
   footerText: text("footer_text").default("").notNull(),
   ...times(),
 });
+
+export const rentalPolicies = pgTable(
+  "rental_policies",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: text("title").notNull(),
+    imageUrl: text("image_url").notNull(),
+    displayOrder: integer("display_order").default(0).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    ...times(),
+  },
+  (t) => [
+    index("rental_policies_display_idx").on(t.isActive, t.displayOrder),
+    check("rental_policies_order_check", sql`${t.displayOrder} >= 0`),
+  ],
+);

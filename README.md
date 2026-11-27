@@ -35,7 +35,7 @@ pnpm dev
 
 Mở <http://localhost:3000>. `.env.local` có ưu tiên cao hơn `.env` ở cả Next.js và các lệnh database. Biến môi trường của tiến trình có ưu tiên cao nhất. Khi dùng database của tổ chức hoặc database dùng chung, chỉ chạy migration/seed khi được phép.
 
-Seed có thể chạy lại: thêm các bản ghi mẫu còn thiếu, không ghi đè nội dung đã sửa. Gồm 7 danh mục, 4 máy ảnh, 4 mức giá mỗi máy, 2 banner, 3 feedback mẫu và cài đặt cửa hàng. Ảnh là placeholder minh họa, không cam kết đúng model; feedback được gắn nhãn mẫu. Thay ảnh, feedback, thông tin liên hệ, tiền cọc và chính sách trong Admin trước khi đưa vào vận hành.
+Seed có thể chạy lại: thêm các bản ghi mẫu còn thiếu, không ghi đè nội dung đã sửa. Gồm danh mục Máy ảnh, 4 máy ảnh, 4 mức giá mỗi máy, 2 banner, 3 feedback mẫu và cài đặt cửa hàng. Ảnh là placeholder minh họa, không cam kết đúng model; feedback được gắn nhãn mẫu. Thay ảnh, feedback, thông tin liên hệ, tiền cọc và chính sách trong Admin trước khi đưa vào vận hành.
 
 ## Tạo tài khoản quản trị
 
@@ -99,7 +99,7 @@ Development: `STORAGE_DRIVER=local`, upload vào `public/uploads/` (được git
 
 Production: `STORAGE_DRIVER=r2`; cung cấp `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`. Tạo bucket và public custom domain trước khi dùng. API S3 của R2 nhận byte từ server, credential không xuất hiện ở client. Tài khoản R2 chỉ cần quyền trên bucket đó.
 
-Chỉ ADMIN được upload, giới hạn 5 MB, chỉ JPEG/PNG/WebP; kiểm tra MIME và chữ ký file, tên file ngẫu nhiên, kiểm tra Origin. Không nhận SVG/HTML. Local upload bị vô hiệu hóa ở production. Xóa bản ghi ảnh không xóa object ngay để tránh làm hỏng URL đang được banner hoặc nội dung khác sử dụng; xử lý dọn object không dùng trong quy trình vận hành kho ảnh.
+Chỉ ADMIN được upload, giới hạn 10 MB và 40 megapixel (tối đa 12.000 pixel mỗi chiều). Nhận JPG/JPEG/PNG/WebP/GIF/BMP/HEIC/HEIF/AVIF/TIFF; kiểm tra byte thực tế, giải mã rồi chuyển sang WebP, không dựa vào MIME hoặc đuôi file do client gửi. Tên file ngẫu nhiên và kiểm tra Origin. GIF/TIFF nhiều trang lấy khung hình đầu tiên. Không nhận SVG/HTML. Local upload bị vô hiệu hóa ở production. Xóa bản ghi ảnh không xóa object ngay để tránh làm hỏng URL đang được banner hoặc nội dung khác sử dụng; xử lý dọn object không dùng trong quy trình vận hành kho ảnh.
 
 ## Kiểm tra
 
@@ -120,7 +120,14 @@ Kiểm thử trình duyệt cần Microsoft Edge, server local đang chạy và 
 ```sh
 node scripts/e2e.mjs
 node scripts/admin-check.mjs
+node scripts/media-check.mjs
 ```
+
+Kiểm thử media mặc định dùng localhost:3004 và database test riêng: kiểm tra upload nhiều ảnh, thay/xóa ảnh, chọn ảnh đại diện, thứ tự gallery, vuốt mobile và CRUD feedback bằng ảnh. Dùng `TEST_BASE_URL` để đổi cổng; server phải dùng cùng `TEST_DATABASE_URL` làm database của ứng dụng. Có thể đặt `NEXT_DIST_DIR=.local/media-next` để tách output của server test.
+
+Trong Admin → Thiết bị, mở form thêm/sửa và dùng khu vực **Hình ảnh sản phẩm** để tải nhiều ảnh, chọn ảnh đại diện, thay/xóa từng ảnh và đổi thứ tự bằng nút lên/xuống. Bấm **Lưu thay đổi** để áp dụng. Mỗi sản phẩm hỗ trợ tối đa 50 ảnh, mỗi ảnh tối đa 10 MB. Có thể chọn nhiều file hoặc kéo thả; ảnh được chuyển sang WebP trước khi xem trước và lưu biểu mẫu.
+
+Trong Admin → Đánh giá, tải **Ảnh feedback**; tên và nội dung có thể để trống khi có ảnh. Chọn nền tảng, link bài đăng, trạng thái hiển thị/nổi bật và thứ tự. Trang chủ chỉ lấy feedback công khai, ưu tiên nổi bật rồi thứ tự tăng dần. Ảnh dài có thể mở lớn và cuộn xem đầy đủ. Database chỉ lưu URL; file dùng storage local khi phát triển hoặc R2 theo cấu hình hiện có.
 
 Biến `TEST_BASE_URL` (mặc định localhost:3000) và `TEST_DATABASE_URL` cấu hình dịch vụ test. Script tạo tài khoản ngẫu nhiên, đặt thuê, chạy quản trị, kiểm tra upload, rồi xóa dữ liệu test. Không chạy vào database production. `scripts/review-check.mjs` kiểm tra lỗi mạng, ảnh hỏng, thu hồi quyền quản trị và giao diện 320–1920px; script này cần production build và mặc định dùng localhost:3001. Báo cáo và ảnh ở `.local/`.
 
@@ -160,3 +167,22 @@ Metadata từng thiết bị lấy tên, mô tả và ảnh từ database; có s
 PostgreSQL kiểm thử riêng nằm tại `.local/postgres`, chỉ lắng nghe 127.0.0.1:55432. Cluster này dùng trust cho localhost để phục vụ kiểm thử, không được đưa lên production. Nếu cần dừng, dùng `pg_ctl -D .local/postgres stop`. Không commit thư mục `.local`, `.env`, `.env.local`, `.dev.vars`, `.next`, `.open-next`, uploads hoặc secret.
 
 Ảnh placeholder: [Vignesh Chandran / Unsplash](https://unsplash.com/photos/a-camera-sitting-on-top-of-a-black-table-U9gfkBQsHBs), tải từ nguồn ảnh Unsplash. Dùng để minh họa giao diện development, thay bằng ảnh kho thiết bị thực tế trong Admin.
+
+### Quy định thuê máy bằng ảnh
+
+- Trang public: `/quy-dinh-thue`; `/policies` chuyển hướng sang trang này.
+- Admin: `/admin/rental-policies`, dùng upload hiện có để thêm/thay ảnh; chỉnh `Thứ tự hiển thị` và `Hiển thị / hoạt động` trong biểu mẫu.
+- Migration `0005_sudden_the_stranger.sql` tạo `rental_policies` và nạp 4 ảnh ban đầu theo thứ tự đính kèm. Migration chỉ chạy một lần; xóa/ẩn ảnh trong Admin không bị seed khôi phục. Các trường text policy cũ được giữ trong database để bảo toàn dữ liệu nhưng không còn được frontend hoặc phần Cài đặt sử dụng.
+- Kiểm thử: `node scripts/rental-policy-check.mjs` dùng `TEST_DATABASE_URL` cục bộ và website thử nghiệm ở `http://localhost:3006`; upload production tiếp tục dùng R2 đã cấu hình.
+
+### Ảnh công thức chỉnh màu và số Zalo
+
+Admin → Máy ảnh → Thêm/Chỉnh sửa có mục **Công thức chỉnh màu của máy ảnh**. Tải bộ ảnh hướng dẫn riêng cho mẫu máy, thay/xóa/đổi thứ tự rồi bấm **Lưu thay đổi**. Khách xem và mở lớn ảnh tại trang chi tiết đúng mẫu máy. Đây là ảnh công thức chỉnh màu khi chụp, không phải lựa chọn màu thân máy.
+
+Migration `0006_camera_recipes.sql` chỉ thêm bảng liên kết ảnh công thức với máy ảnh và index. Chạy `pnpm db:migrate` khi cài mới hoặc cập nhật môi trường khác; không cần seed lại.
+
+Đăng ký mới bắt buộc số di động sử dụng Zalo, chấp nhận dạng 10 số hoặc +84 và lưu chuẩn 0xxxxxxxxx vào cột `users.phone` hiện có. Tài khoản cũ tiếp tục đăng nhập; có thể bổ sung số Zalo tại trang Tài khoản. Admin xem số tại Người dùng và chi tiết Đơn thuê. Không có thao tác gửi tin nhắn Zalo tự động.
+
+Node.js (kể cả chia sẻ qua cloudflared) giải mã/chuyển đổi bằng sharp, heic-decode và bmp-js. Upload trên Cloudflare Workers dùng binding `IMAGES`, phải cấu hình và kiểm chứng riêng; tập định dạng/codec được hỗ trợ phụ thuộc Cloudflare Images, đặc biệt BMP/TIFF và AVIF đầu vào chưa được xác nhận trên Workers. R2 vẫn lưu ảnh đầu ra. Cloudflare Workers chưa được deploy/kiểm thử ở lần cập nhật này.
+
+Kiểm thử bổ sung: `node scripts/camera-updates-check.mjs` với `TEST_DATABASE_URL` local riêng và `TEST_BASE_URL` cùng origin của server (mặc định localhost:3010); server dùng cùng database test, `STORAGE_DRIVER=local` và chế độ development để kiểm tra upload. Ảnh HEIC mẫu tùy chọn ở `.local/codec-example.heic` lấy từ [libheif](https://github.com/strukturag/libheif/blob/master/examples/example.heic). Chi tiết thay đổi và kết quả tại [docs/camera-updates.md](docs/camera-updates.md).

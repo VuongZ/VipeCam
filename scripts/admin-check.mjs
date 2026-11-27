@@ -171,12 +171,23 @@ try {
   await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.goto(`${base}/cameras/${tag.toLowerCase()}`);
-  await expect(page.getByRole("heading", { name: "Không tìm thấy trang", exact: true })).toBeVisible();
-  expect((await pool.query('select is_active from cameras where id=$1',[cameraId])).rows[0].is_active).toBe(false);
+  await expect(
+    page.getByRole("heading", { name: "Không tìm thấy trang", exact: true }),
+  ).toBeVisible();
+  expect(
+    (await pool.query("select is_active from cameras where id=$1", [cameraId]))
+      .rows[0].is_active,
+  ).toBe(false);
   console.log("cameras: CRUD, specifications and public visibility passed");
   const spoof = await context.request.post(`${base}/api/auth/sign-up/email`, {
     headers: { Origin: base },
-    data: { name: tag, email: `role-${email}`, password, role: "ADMIN" },
+    data: {
+      name: tag,
+      email: `role-${email}`,
+      password,
+      phone: "0901234567",
+      role: "ADMIN",
+    },
   });
   expect(spoof.ok()).toBe(true);
   expect(

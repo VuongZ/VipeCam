@@ -38,6 +38,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
               ? await authClient.signUp.email({
                   ...parsed.data,
                   name: String(input.name),
+                  phone: signUpSchema.parse(input).phone,
                 })
               : await authClient.signIn.email(parsed.data);
             if (result.error) {
@@ -74,6 +75,24 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           Email
           <input name="email" type="email" autoComplete="email" required />
         </label>
+        {register && (
+          <label>
+            Số điện thoại sử dụng Zalo
+            <input
+              aria-label="Số điện thoại sử dụng Zalo"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              required
+              maxLength={30}
+              placeholder="0901234567 hoặc +84901234567"
+            />
+            <span className="helper-text">
+              Dùng để cửa hàng liên hệ về đơn thuê.
+            </span>
+          </label>
+        )}
         <label>
           Mật khẩu
           <input

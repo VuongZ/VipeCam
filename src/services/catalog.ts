@@ -5,9 +5,11 @@ import {
   banners,
   cameras,
   cameraImages,
+  cameraRecipes,
   categories,
   feedbacks,
   rentalPrices,
+  rentalPolicies,
   settings,
 } from "@/db/schema";
 export const getSettings = cache(async () => {
@@ -22,7 +24,7 @@ export const getCategories = cache(() =>
   db
     .select()
     .from(categories)
-    .where(eq(categories.isActive, true))
+    .where(and(eq(categories.isActive, true), eq(categories.icon, "Camera")))
     .orderBy(asc(categories.displayOrder)),
 );
 export const getCatalog = cache(async (slug?: string) => {
@@ -34,18 +36,19 @@ export const getCatalog = cache(async (slug?: string) => {
       and(
         eq(cameras.isActive, true),
         eq(categories.isActive, true),
+        eq(categories.icon, "Camera"),
         slug ? eq(cameras.slug, slug) : undefined,
       ),
     )
     .orderBy(desc(cameras.isFeatured), desc(cameras.createdAt));
   if (!rows.length) return [];
   const ids = rows.map((r) => r.camera.id);
-  const [images, prices] = await Promise.all([
+  const [images, prices, recipes] = await Promise.all([
     db
       .select()
       .from(cameraImages)
       .where(inArray(cameraImages.cameraId, ids))
-      .orderBy(desc(cameraImages.isPrimary), asc(cameraImages.displayOrder)),
+      .orderBy(asc(cameraImages.displayOrder), asc(cameraImages.id)),
     db
       .select()
       .from(rentalPrices)
@@ -56,6 +59,11 @@ export const getCatalog = cache(async (slug?: string) => {
         ),
       )
       .orderBy(asc(rentalPrices.displayOrder)),
+    db
+      .select()
+      .from(cameraRecipes)
+      .where(inArray(cameraRecipes.cameraId, ids))
+      .orderBy(cameraRecipes.displayOrder, cameraRecipes.id),
   ]);
   const imagesByCamera = new Map<string, typeof images>();
   const pricesByCamera = new Map<string, typeof prices>();
@@ -74,6 +82,7 @@ export const getCatalog = cache(async (slug?: string) => {
     category,
     images: imagesByCamera.get(camera.id) || [],
     prices: pricesByCamera.get(camera.id) || [],
+    recipeImages: recipes.filter((r) => r.cameraId === camera.id),
   }));
 });
 export type CatalogCamera = Awaited<ReturnType<typeof getCatalog>>[number];
@@ -88,5 +97,16 @@ export const getFeedbacks = () =>
     .select()
     .from(feedbacks)
     .where(eq(feedbacks.isVisible, true))
-    .orderBy(desc(feedbacks.isFeatured), desc(feedbacks.createdAt))
+    .orderBy(
+      desc(feedbacks.isFeatured),
+      asc(feedbacks.displayOrder),
+      desc(feedbacks.createdAt),
+    )
     .limit(20);
+
+export const getRentalPolicies = () =>
+  db
+    .select()
+    .from(rentalPolicies)
+    .where(eq(rentalPolicies.isActive, true))
+    .orderBy(asc(rentalPolicies.displayOrder), asc(rentalPolicies.id));

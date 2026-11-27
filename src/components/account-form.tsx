@@ -5,7 +5,16 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { z } from "zod";
-export function AccountForm({ name, email }: { name: string; email: string }) {
+import { profileSchema } from "@/validators";
+export function AccountForm({
+  name,
+  email,
+  phone,
+}: {
+  name: string;
+  email: string;
+  phone?: string | null;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   async function handle(
@@ -38,15 +47,11 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
           onSubmit={(e) => {
             e.preventDefault();
             const data = new FormData(e.currentTarget);
-            const parsed = z
-              .string()
-              .trim()
-              .min(1)
-              .max(250)
-              .safeParse(data.get("name"));
-            if (!parsed.success) return toast.error("Họ tên không hợp lệ.");
+            const parsed = profileSchema.safeParse(Object.fromEntries(data));
+            if (!parsed.success)
+              return toast.error(parsed.error.issues[0].message);
             void handle(
-              () => authClient.updateUser({ name: parsed.data }),
+              () => authClient.updateUser(parsed.data),
               "Đã lưu thông tin.",
             );
           }}
@@ -59,6 +64,19 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
           <label>
             Email
             <input value={email} readOnly />
+          </label>
+          <label>
+            Số điện thoại sử dụng Zalo
+            <input
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              defaultValue={phone || ""}
+              required
+              maxLength={30}
+              placeholder="0901234567 hoặc +84901234567"
+            />
           </label>
           <Button disabled={busy}>Lưu thông tin</Button>
         </form>
