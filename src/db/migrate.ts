@@ -15,6 +15,8 @@ main().catch((error: unknown) => {
     messages.push(e instanceof Error ? e.message : String(e));
   const detail = messages
     .join(" <- ")
+    // GitHub annotations keep only the first line.
+    .replace(/\s*\n\s*/g, " | ")
     // Never print credentials embedded in a connection string.
     .replace(/postgres(ql)?:\/\/[^\s"']+/gi, "postgresql://***");
   console.error(
